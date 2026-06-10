@@ -1,0 +1,11 @@
+#==============================================================================
+# BOOTSTRAP EXAMPLE VARIABLES
+#==============================================================================
+
+aws_region        = "us-east-1"
+project_name      = "ecs-fargate-oidc"
+environment       = "dev"
+github_owner      = "bharathadigopula"
+github_repository = "devops-platform-blueprints"
+github_branch     = "main"
+managed_policy_arns = []

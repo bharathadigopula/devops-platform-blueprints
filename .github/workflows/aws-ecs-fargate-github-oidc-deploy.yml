@@ -1,0 +1,135 @@
+#==============================================================================
+# AWS ECS FARGATE OIDC DEPLOY WORKFLOW
+#==============================================================================
+
+name: AWS ECS Fargate OIDC Deploy
+
+#==============================================================================
+# WORKFLOW TRIGGERS
+#==============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment name"
+        required: true
+        default: "dev"
+      aws_region:
+        description: "AWS region"
+        required: true
+        default: "us-east-1"
+      enable_nat_gateway:
+        description: "Set true for a live private ECS deployment"
+        required: true
+        default: "false"
+      confirm_apply:
+        description: "Type apply-aws-ecs-fargate-github-oidc"
+        required: true
+
+#==============================================================================
+# WORKFLOW PERMISSIONS
+#==============================================================================
+
+permissions:
+  contents: read
+  id-token: write
+
+#==============================================================================
+# WORKFLOW CONCURRENCY
+#==============================================================================
+
+concurrency:
+  group: aws-ecs-fargate-github-oidc-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+#==============================================================================
+# WORKFLOW JOBS
+#==============================================================================
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    env:
+      APP_DIR: blueprints/aws-ecs-fargate-github-oidc/app
+      INFRA_DIR: blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_aws_region: ${{ github.event.inputs.aws_region }}
+      TF_VAR_environment: ${{ github.event.inputs.environment }}
+      TF_VAR_project_name: "ecs-fargate-oidc"
+      TF_VAR_enable_nat_gateway: ${{ github.event.inputs.enable_nat_gateway }}
+    steps:
+      #==============================================================================
+      # DEPLOYMENT CONFIRMATION
+      #==============================================================================
+      - name: Check Confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm_apply }}" != "apply-aws-ecs-fargate-github-oidc" ]; then
+            echo "Confirmation phrase did not match."
+            exit 1
+          fi
+
+      #==============================================================================
+      # SOURCE CHECKOUT
+      #==============================================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #==============================================================================
+      # AWS AUTHENTICATION
+      #==============================================================================
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ github.event.inputs.aws_region }}
+
+      #==============================================================================
+      # TERRAFORM SETUP
+      #==============================================================================
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Init
+        working-directory: ${{ env.INFRA_DIR }}
+        run: terraform init
+
+      #==============================================================================
+      # CONTAINER REGISTRY BOOTSTRAP
+      #==============================================================================
+      - name: Create ECR Repository
+        working-directory: ${{ env.INFRA_DIR }}
+        run: terraform apply -input=false -auto-approve -target=module.ecr
+
+      - name: Read ECR Repository URL
+        id: ecr
+        working-directory: ${{ env.INFRA_DIR }}
+        run: echo "repository_url=$(terraform output -raw ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      #==============================================================================
+      # CONTAINER IMAGE PUBLISH
+      #==============================================================================
+      - name: Login To Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build And Push Image
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          REPOSITORY_URL: ${{ steps.ecr.outputs.repository_url }}
+        run: |
+          docker build -t "$REPOSITORY_URL:$IMAGE_TAG" .
+          docker push "$REPOSITORY_URL:$IMAGE_TAG"
+
+      #==============================================================================
+      # TERRAFORM APPLY
+      #==============================================================================
+      - name: Terraform Apply
+        working-directory: ${{ env.INFRA_DIR }}
+        env:
+          TF_VAR_container_image_tag: ${{ github.sha }}
+        run: terraform apply -input=false -auto-approve

@@ -1,0 +1,20 @@
+#==============================================================================
+# WORKLOAD EXAMPLE VARIABLES
+#==============================================================================
+
+aws_region              = "us-east-1"
+project_name            = "ecs-fargate-oidc"
+environment             = "dev"
+enable_nat_gateway      = false
+create_ecr_kms_key      = true
+alb_deletion_protection = true
+container_image_tag     = "latest"
+
+#==============================================================================
+# WORKLOAD TAGS
+#==============================================================================
+
+tags = {
+  Owner      = "platform"
+  CostCenter = "portfolio"
+}

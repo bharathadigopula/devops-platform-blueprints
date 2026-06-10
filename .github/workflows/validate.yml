@@ -1,0 +1,164 @@
+#==============================================================================
+# BLUEPRINT VALIDATION WORKFLOW
+#==============================================================================
+
+name: Validate Blueprints
+
+#==============================================================================
+# WORKFLOW TRIGGERS
+#==============================================================================
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+#==============================================================================
+# WORKFLOW PERMISSIONS
+#==============================================================================
+
+permissions:
+  contents: read
+
+#==============================================================================
+# WORKFLOW JOBS
+#==============================================================================
+
+jobs:
+  app:
+    name: Validate App
+    runs-on: ubuntu-latest
+    steps:
+      #==============================================================================
+      # SOURCE CHECKOUT
+      #==============================================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #==============================================================================
+      # NODE SETUP
+      #==============================================================================
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      #==============================================================================
+      # APPLICATION VALIDATION
+      #==============================================================================
+      - name: Check Node App
+        working-directory: blueprints/aws-ecs-fargate-github-oidc/app
+        run: npm test
+
+      #==============================================================================
+      # CONTAINER BUILD VALIDATION
+      #==============================================================================
+      - name: Build Container
+        working-directory: blueprints/aws-ecs-fargate-github-oidc/app
+        run: docker build -t aws-ecs-fargate-github-oidc:test .
+
+  terraform:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory:
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/bootstrap
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+    steps:
+      #==============================================================================
+      # SOURCE CHECKOUT
+      #==============================================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #==============================================================================
+      # TERRAFORM SETUP
+      #==============================================================================
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      #==============================================================================
+      # TERRAFORM FORMAT VALIDATION
+      #==============================================================================
+      - name: Terraform Format Check
+        working-directory: ${{ matrix.directory }}
+        run: terraform fmt -check
+
+      #==============================================================================
+      # TERRAFORM INIT
+      #==============================================================================
+      - name: Terraform Init
+        working-directory: ${{ matrix.directory }}
+        run: terraform init -backend=false
+
+      #==============================================================================
+      # TERRAFORM VALIDATION
+      #==============================================================================
+      - name: Terraform Validate
+        working-directory: ${{ matrix.directory }}
+        run: terraform validate
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory:
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/bootstrap
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+    steps:
+      #==============================================================================
+      # SOURCE CHECKOUT
+      #==============================================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #==============================================================================
+      # TFLINT SETUP
+      #==============================================================================
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.54.0
+
+      #==============================================================================
+      # TFLINT INIT
+      #==============================================================================
+      - name: Init TFLint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: tflint --init
+
+      #==============================================================================
+      # TFLINT VALIDATION
+      #==============================================================================
+      - name: Run TFLint
+        run: tflint --chdir="${{ matrix.directory }}"
+
+  checkov:
+    name: Checkov
+    runs-on: ubuntu-latest
+    steps:
+      #==============================================================================
+      # SOURCE CHECKOUT
+      #==============================================================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #==============================================================================
+      # CHECKOV VALIDATION
+      #==============================================================================
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: blueprints/aws-ecs-fargate-github-oidc/infrastructure
+          framework: terraform
+          config_file: .checkov.yaml
+          soft_fail: true
