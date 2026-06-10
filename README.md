@@ -20,6 +20,35 @@ The first blueprint pins that module repo to commit:
 62c1cedd48e63734528c67720bb157df22f6c738
 ```
 
+After the first module release tag is published, update module sources to:
+
+```text
+v0.1.0
+```
+
+## Module Reference Policy
+
+<!--
+==============================================================================
+MODULE REFERENCE POLICY
+==============================================================================
+-->
+
+Blueprints should consume `terraform-aws-modules` using stable release tags.
+
+Current bootstrap state:
+
+```text
+Pinned commit: 62c1cedd48e63734528c67720bb157df22f6c738
+Planned release tag: v0.1.0
+```
+
+After `v0.1.0` is created in `terraform-aws-modules`, replace commit refs with:
+
+```hcl
+ref=v0.1.0
+```
+
 ## Blueprints
 
 <!--
