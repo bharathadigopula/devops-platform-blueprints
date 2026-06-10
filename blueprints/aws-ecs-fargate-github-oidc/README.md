@@ -42,6 +42,7 @@ BLUEPRINT STRUCTURE
 | Path | Purpose |
 | --- | --- |
 | `app` | Small Node.js HTTP service |
+| `infrastructure/00-state-backend` | S3, DynamoDB, and KMS resources for Terraform state |
 | `infrastructure/00-identity-bootstrap` | One-time GitHub OIDC role setup |
 | `infrastructure/modules/ecs-fargate-platform` | Shared ECS platform implementation |
 | `infrastructure/environments/dev` | Deployable dev environment root |
@@ -86,5 +87,8 @@ MANUAL DEPLOYMENT FLOW
 1. Run `terraform init` and `terraform apply` in `infrastructure/00-identity-bootstrap`.
 2. Add the output role ARN as the GitHub repository variable `AWS_ROLE_TO_ASSUME`.
 3. Attach account-specific permissions to the OIDC role through `managed_policy_arns` or your own IAM process.
-4. Run the validation workflow.
-5. Run the deploy workflow with the required confirmation phrase.
+4. Run `AWS ECS Fargate OIDC State Backend`.
+5. Add `TF_BACKEND_BUCKET`, `TF_BACKEND_DYNAMODB_TABLE`, and `TF_BACKEND_KMS_KEY_ARN` from the backend outputs.
+6. Run the validation workflow.
+7. Run the plan workflow.
+8. Run the deploy workflow with the required confirmation phrase.

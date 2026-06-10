@@ -60,6 +60,9 @@ jobs:
       APP_DIR: blueprints/aws-ecs-fargate-github-oidc/app
       INFRA_DIR: blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/${{ github.event.inputs.environment }}
       TF_IN_AUTOMATION: "true"
+      TF_BACKEND_BUCKET: ${{ vars.TF_BACKEND_BUCKET }}
+      TF_BACKEND_DYNAMODB_TABLE: ${{ vars.TF_BACKEND_DYNAMODB_TABLE }}
+      TF_BACKEND_KMS_KEY_ARN: ${{ vars.TF_BACKEND_KMS_KEY_ARN }}
       TF_VAR_aws_region: ${{ github.event.inputs.aws_region }}
       TF_VAR_environment: ${{ github.event.inputs.environment }}
       TF_VAR_project_name: "ecs-fargate-oidc"
@@ -100,18 +103,37 @@ jobs:
           terraform_version: "1.9.0"
 
       #==============================================================================
+      # BACKEND VARIABLE CHECK
+      #==============================================================================
+      - name: Check Backend Variables
+        run: |
+          for name in TF_BACKEND_BUCKET TF_BACKEND_DYNAMODB_TABLE TF_BACKEND_KMS_KEY_ARN; do
+            if [ -z "${!name}" ]; then
+              echo "$name is required."
+              exit 1
+            fi
+          done
+
+      #==============================================================================
       # TERRAFORM INIT
       #==============================================================================
       - name: Terraform Init
         working-directory: ${{ env.INFRA_DIR }}
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${TF_BACKEND_BUCKET}" \
+            -backend-config="key=aws-ecs-fargate-github-oidc/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ github.event.inputs.aws_region }}" \
+            -backend-config="dynamodb_table=${TF_BACKEND_DYNAMODB_TABLE}" \
+            -backend-config="encrypt=true" \
+            -backend-config="kms_key_id=${TF_BACKEND_KMS_KEY_ARN}"
 
       #==============================================================================
       # CONTAINER REGISTRY BOOTSTRAP
       #==============================================================================
       - name: Create ECR Repository
         working-directory: ${{ env.INFRA_DIR }}
-        run: terraform apply -input=false -auto-approve -target=module.ecr
+        run: terraform apply -input=false -auto-approve -target=module.platform.module.ecr
 
       - name: Read ECR Repository URL
         id: ecr

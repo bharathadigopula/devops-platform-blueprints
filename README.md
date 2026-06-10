@@ -68,6 +68,7 @@ Each environment root calls that module with environment-specific network ranges
 
 | Layer | Purpose |
 | --- | --- |
+| `00-state-backend` | S3 bucket, DynamoDB lock table, and KMS key for Terraform state |
 | `00-identity-bootstrap` | One-time GitHub OIDC role setup |
 | `modules/ecs-fargate-platform/00-context.tf` | Shared AWS data and naming locals |
 | `modules/ecs-fargate-platform/01-identity-access.tf` | KMS and ECS task IAM |
@@ -114,3 +115,26 @@ Apply workflows require an explicit confirmation phrase.
 AWS credentials are expected through OIDC, not long-lived access keys.
 
 Cost-bearing options are visible in Terraform variables.
+
+## Deployment Order
+
+<!--
+==============================================================================
+DEPLOYMENT ORDER
+==============================================================================
+-->
+
+1. Apply `blueprints/aws-ecs-fargate-github-oidc/infrastructure/00-identity-bootstrap`.
+2. Add `AWS_ROLE_TO_ASSUME` to the required GitHub environments.
+3. Run `AWS ECS Fargate OIDC State Backend`.
+4. Add these GitHub environment variables from the state backend outputs:
+
+```text
+TF_BACKEND_BUCKET
+TF_BACKEND_DYNAMODB_TABLE
+TF_BACKEND_KMS_KEY_ARN
+```
+
+5. Run `AWS ECS Fargate OIDC Plan`.
+6. Review the plan.
+7. Run `AWS ECS Fargate OIDC Deploy` only when ready.
