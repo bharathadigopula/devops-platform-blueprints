@@ -21,7 +21,7 @@ variable "project_name" {
 variable "environment" {
   description = "Environment name used for resource naming and tagging"
   type        = string
-  default     = "dev"
+  default     = "stage"
 }
 
 variable "name_prefix" {
@@ -81,7 +81,7 @@ variable "enable_execute_command" {
 variable "log_retention_days" {
   description = "CloudWatch Logs retention in days"
   type        = number
-  default     = 30
+  default     = 60
 }
 
 variable "alb_deletion_protection" {

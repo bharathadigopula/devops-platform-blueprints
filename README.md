@@ -62,23 +62,25 @@ INFRASTRUCTURE LAYER MODEL
 ==============================================================================
 -->
 
-The ECS blueprint keeps the deployable environment in one Terraform root for now, with layer files inside that root.
+The ECS blueprint keeps the reusable platform implementation in a local Terraform module.
 
-This avoids early cross-state complexity while still keeping the platform design easy to read.
+Each environment root calls that module with environment-specific network ranges, scaling defaults, and operational settings.
 
 | Layer | Purpose |
 | --- | --- |
 | `00-identity-bootstrap` | One-time GitHub OIDC role setup |
-| `00-context.tf` | Shared AWS data and naming locals |
-| `01-identity-access.tf` | KMS and ECS task IAM |
-| `02-network-foundation.tf` | VPC, subnets, security groups, and private service endpoints |
-| `03-container-platform.tf` | ECR, ALB, ECS cluster, task definition, and service |
-| `04-observability-operations.tf` | CloudWatch application logs |
+| `modules/ecs-fargate-platform/00-context.tf` | Shared AWS data and naming locals |
+| `modules/ecs-fargate-platform/01-identity-access.tf` | KMS and ECS task IAM |
+| `modules/ecs-fargate-platform/02-network-foundation.tf` | VPC, subnets, security groups, and private service endpoints |
+| `modules/ecs-fargate-platform/03-container-platform.tf` | ECR, ALB, ECS cluster, task definition, and service |
+| `modules/ecs-fargate-platform/04-observability-operations.tf` | CloudWatch application logs |
 
-Environment roots live under:
+Environment roots:
 
 ```text
 blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/dev
+blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/stage
+blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/prod
 ```
 
 ## Portfolio Story

@@ -21,7 +21,7 @@ variable "project_name" {
 variable "environment" {
   description = "Environment name used for resource naming and tagging"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 variable "name_prefix" {
@@ -65,7 +65,7 @@ variable "container_image_tag" {
 variable "desired_count" {
   description = "Desired ECS task count"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "enable_execute_command" {
@@ -81,7 +81,7 @@ variable "enable_execute_command" {
 variable "log_retention_days" {
   description = "CloudWatch Logs retention in days"
   type        = number
-  default     = 30
+  default     = 90
 }
 
 variable "alb_deletion_protection" {

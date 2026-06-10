@@ -1,20 +1,20 @@
 #==============================================================================
-# DEV EXAMPLE VARIABLES
+# STAGE EXAMPLE VARIABLES
 #==============================================================================
 
 aws_region              = "us-east-1"
 project_name            = "ecs-fargate-oidc"
-environment             = "dev"
+environment             = "stage"
 enable_nat_gateway      = false
 enable_vpc_endpoints    = true
 desired_count           = 1
-log_retention_days      = 30
+log_retention_days      = 60
 create_ecr_kms_key      = true
 alb_deletion_protection = true
 container_image_tag     = "latest"
 
 #==============================================================================
-# DEV TAGS
+# STAGE TAGS
 #==============================================================================
 
 tags = {

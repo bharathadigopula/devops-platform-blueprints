@@ -34,6 +34,30 @@ variable "name_prefix" {
 # NETWORK VARIABLES
 #==============================================================================
 
+variable "vpc_cidr_block" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.42.0.0/16"
+}
+
+variable "availability_zones" {
+  description = "Availability zones for public and private subnets"
+  type        = list(string)
+  default     = []
+}
+
+variable "public_subnet_cidr_blocks" {
+  description = "CIDR blocks for public ALB subnets"
+  type        = list(string)
+  default     = ["10.42.0.0/24", "10.42.1.0/24"]
+}
+
+variable "private_subnet_cidr_blocks" {
+  description = "CIDR blocks for private ECS task subnets"
+  type        = list(string)
+  default     = ["10.42.10.0/24", "10.42.11.0/24"]
+}
+
 variable "enable_nat_gateway" {
   description = "Create a NAT Gateway for private ECS task internet egress"
   type        = bool
@@ -55,6 +79,24 @@ variable "allowed_http_cidr_blocks" {
 #==============================================================================
 # APPLICATION VARIABLES
 #==============================================================================
+
+variable "container_port" {
+  description = "Application container port"
+  type        = number
+  default     = 8080
+}
+
+variable "container_cpu" {
+  description = "Fargate task CPU units"
+  type        = number
+  default     = 256
+}
+
+variable "container_memory" {
+  description = "Fargate task memory in MiB"
+  type        = number
+  default     = 512
+}
 
 variable "container_image_tag" {
   description = "Image tag deployed from ECR"
@@ -100,6 +142,12 @@ variable "create_ecr_kms_key" {
   description = "Create a KMS key for ECR encryption when ecr_kms_key_arn is not provided"
   type        = bool
   default     = true
+}
+
+variable "ecr_kms_key_arn" {
+  description = "Existing KMS key ARN for ECR encryption"
+  type        = string
+  default     = null
 }
 
 #==============================================================================

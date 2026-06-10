@@ -43,11 +43,14 @@ BLUEPRINT STRUCTURE
 | --- | --- |
 | `app` | Small Node.js HTTP service |
 | `infrastructure/00-identity-bootstrap` | One-time GitHub OIDC role setup |
+| `infrastructure/modules/ecs-fargate-platform` | Shared ECS platform implementation |
 | `infrastructure/environments/dev` | Deployable dev environment root |
-| `infrastructure/environments/dev/01-identity-access.tf` | KMS and ECS task IAM |
-| `infrastructure/environments/dev/02-network-foundation.tf` | VPC, subnets, security groups, and VPC endpoints |
-| `infrastructure/environments/dev/03-container-platform.tf` | ECR, ALB, ECS cluster, task definition, and service |
-| `infrastructure/environments/dev/04-observability-operations.tf` | CloudWatch application logs |
+| `infrastructure/environments/stage` | Deployable stage environment root |
+| `infrastructure/environments/prod` | Deployable prod environment root |
+| `infrastructure/modules/ecs-fargate-platform/01-identity-access.tf` | KMS and ECS task IAM |
+| `infrastructure/modules/ecs-fargate-platform/02-network-foundation.tf` | VPC, subnets, security groups, and VPC endpoints |
+| `infrastructure/modules/ecs-fargate-platform/03-container-platform.tf` | ECR, ALB, ECS cluster, task definition, and service |
+| `infrastructure/modules/ecs-fargate-platform/04-observability-operations.tf` | CloudWatch application logs |
 
 ## Deployment Notes
 
