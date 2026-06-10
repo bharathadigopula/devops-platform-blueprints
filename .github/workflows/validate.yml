@@ -67,8 +67,8 @@ jobs:
     strategy:
       matrix:
         directory:
-          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/bootstrap
-          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/00-identity-bootstrap
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/dev
     steps:
       #==============================================================================
       # SOURCE CHECKOUT
@@ -111,8 +111,8 @@ jobs:
     strategy:
       matrix:
         directory:
-          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/bootstrap
-          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/00-identity-bootstrap
+          - blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/dev
     steps:
       #==============================================================================
       # SOURCE CHECKOUT

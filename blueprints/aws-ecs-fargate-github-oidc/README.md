@@ -28,6 +28,7 @@ BLUEPRINT CAPABILITIES
 - Manual apply with explicit confirmation
 - Deployment circuit breaker rollback
 - CloudWatch application logs
+- Private ECR, CloudWatch Logs, and S3 access through VPC endpoints
 - Cost and ownership tags
 
 ## Structure
@@ -41,8 +42,12 @@ BLUEPRINT STRUCTURE
 | Path | Purpose |
 | --- | --- |
 | `app` | Small Node.js HTTP service |
-| `infrastructure/bootstrap` | One-time GitHub OIDC role setup |
-| `infrastructure/workload` | ECS, ALB, VPC, ECR, IAM, and logs |
+| `infrastructure/00-identity-bootstrap` | One-time GitHub OIDC role setup |
+| `infrastructure/environments/dev` | Deployable dev environment root |
+| `infrastructure/environments/dev/01-identity-access.tf` | KMS and ECS task IAM |
+| `infrastructure/environments/dev/02-network-foundation.tf` | VPC, subnets, security groups, and VPC endpoints |
+| `infrastructure/environments/dev/03-container-platform.tf` | ECR, ALB, ECS cluster, task definition, and service |
+| `infrastructure/environments/dev/04-observability-operations.tf` | CloudWatch application logs |
 
 ## Deployment Notes
 
@@ -54,9 +59,16 @@ DEPLOYMENT NOTES
 
 The workload uses private subnets.
 
-For a live deployment, private tasks need outbound access to ECR and CloudWatch Logs.
+Private ECS tasks need access to ECR image APIs, ECR image layers in S3, and CloudWatch Logs.
 
-Set `enable_nat_gateway = true` for the simplest live setup, or adapt the blueprint to use VPC endpoints.
+The default path uses VPC endpoints:
+
+```hcl
+enable_vpc_endpoints = true
+enable_nat_gateway   = false
+```
+
+Set `enable_nat_gateway = true` only when the workload needs broader outbound internet access.
 
 NAT Gateway has hourly and data processing costs.
 
@@ -68,7 +80,7 @@ MANUAL DEPLOYMENT FLOW
 ==============================================================================
 -->
 
-1. Run `terraform init` and `terraform apply` in `infrastructure/bootstrap`.
+1. Run `terraform init` and `terraform apply` in `infrastructure/00-identity-bootstrap`.
 2. Add the output role ARN as the GitHub repository variable `AWS_ROLE_TO_ASSUME`.
 3. Attach account-specific permissions to the OIDC role through `managed_policy_arns` or your own IAM process.
 4. Run the validation workflow.

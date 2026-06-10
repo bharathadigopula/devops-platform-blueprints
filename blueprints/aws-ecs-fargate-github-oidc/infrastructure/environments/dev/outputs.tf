@@ -50,6 +50,16 @@ output "private_subnet_ids" {
   value       = module.subnets.private_subnet_ids
 }
 
+output "interface_vpc_endpoint_ids" {
+  description = "Interface VPC endpoint IDs for private AWS service access"
+  value       = { for service, endpoint in aws_vpc_endpoint.interface : service => endpoint.id }
+}
+
+output "s3_vpc_endpoint_id" {
+  description = "S3 gateway VPC endpoint ID"
+  value       = try(aws_vpc_endpoint.s3[0].id, null)
+}
+
 #==============================================================================
 # OBSERVABILITY OUTPUTS
 #==============================================================================
@@ -58,4 +68,3 @@ output "log_group_name" {
   description = "CloudWatch log group name for the application"
   value       = local.log_group_name
 }
-

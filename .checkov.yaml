@@ -16,3 +16,4 @@ skip-check:
   - CKV_AWS_131
   - CKV_AWS_273
   - CKV_AWS_40
+  - CKV_TF_1

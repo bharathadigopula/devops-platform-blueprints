@@ -59,9 +59,15 @@ variable "private_subnet_cidr_blocks" {
 }
 
 variable "enable_nat_gateway" {
-  description = "Create a NAT Gateway so private ECS tasks can reach ECR and CloudWatch Logs"
+  description = "Create a NAT Gateway for private ECS task internet egress"
   type        = bool
   default     = false
+}
+
+variable "enable_vpc_endpoints" {
+  description = "Create ECR, CloudWatch Logs, and S3 VPC endpoints for private ECS task access"
+  type        = bool
+  default     = true
 }
 
 variable "allowed_http_cidr_blocks" {

@@ -14,13 +14,7 @@ This repo is the implementation layer above reusable modules. It consumes module
 https://github.com/bharathadigopula/terraform-aws-modules
 ```
 
-The first blueprint pins that module repo to commit:
-
-```text
-62c1cedd48e63734528c67720bb157df22f6c738
-```
-
-After the first module release tag is published, update module sources to:
+The first blueprint pins that module repo to release tag:
 
 ```text
 v0.1.0
@@ -36,14 +30,13 @@ MODULE REFERENCE POLICY
 
 Blueprints should consume `terraform-aws-modules` using stable release tags.
 
-Current bootstrap state:
+Current module release:
 
 ```text
-Pinned commit: 62c1cedd48e63734528c67720bb157df22f6c738
-Planned release tag: v0.1.0
+v0.1.0
 ```
 
-After `v0.1.0` is created in `terraform-aws-modules`, replace commit refs with:
+Blueprint module sources use:
 
 ```hcl
 ref=v0.1.0
@@ -60,6 +53,33 @@ BLUEPRINT CATALOG
 | Blueprint | Status | Purpose |
 | --- | --- | --- |
 | `aws-ecs-fargate-github-oidc` | MVP | Deploy a private ECS Fargate workload behind a public ALB using GitHub Actions OIDC |
+
+## Infrastructure Layers
+
+<!--
+==============================================================================
+INFRASTRUCTURE LAYER MODEL
+==============================================================================
+-->
+
+The ECS blueprint keeps the deployable environment in one Terraform root for now, with layer files inside that root.
+
+This avoids early cross-state complexity while still keeping the platform design easy to read.
+
+| Layer | Purpose |
+| --- | --- |
+| `00-identity-bootstrap` | One-time GitHub OIDC role setup |
+| `00-context.tf` | Shared AWS data and naming locals |
+| `01-identity-access.tf` | KMS and ECS task IAM |
+| `02-network-foundation.tf` | VPC, subnets, security groups, and private service endpoints |
+| `03-container-platform.tf` | ECR, ALB, ECS cluster, task definition, and service |
+| `04-observability-operations.tf` | CloudWatch application logs |
+
+Environment roots live under:
+
+```text
+blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/dev
+```
 
 ## Portfolio Story
 

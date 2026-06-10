@@ -37,6 +37,7 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     env:
+      INFRA_DIR: blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/${{ github.event.inputs.environment }}
       TF_IN_AUTOMATION: "true"
       TF_VAR_aws_region: ${{ github.event.inputs.aws_region }}
       TF_VAR_environment: ${{ github.event.inputs.environment }}
@@ -65,15 +66,18 @@ jobs:
         with:
           terraform_version: "1.9.0"
 
+      #==============================================================================
+      # TERRAFORM INIT
+      #==============================================================================
       - name: Terraform Init
-        working-directory: blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+        working-directory: ${{ env.INFRA_DIR }}
         run: terraform init
 
       #==============================================================================
       # TERRAFORM PLAN
       #==============================================================================
       - name: Terraform Plan
-        working-directory: blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+        working-directory: ${{ env.INFRA_DIR }}
         run: terraform plan -input=false -out=tfplan
 
       #==============================================================================
@@ -83,5 +87,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: aws-ecs-fargate-github-oidc-${{ github.event.inputs.environment }}-tfplan
-          path: blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload/tfplan
+          path: ${{ env.INFRA_DIR }}/tfplan
           retention-days: 7

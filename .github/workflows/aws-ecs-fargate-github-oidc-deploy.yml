@@ -20,9 +20,13 @@ on:
         required: true
         default: "us-east-1"
       enable_nat_gateway:
-        description: "Set true for a live private ECS deployment"
+        description: "Optional NAT Gateway for private workload egress"
         required: true
         default: "false"
+      enable_vpc_endpoints:
+        description: "Create private ECR, CloudWatch Logs, and S3 endpoints"
+        required: true
+        default: "true"
       confirm_apply:
         description: "Type apply-aws-ecs-fargate-github-oidc"
         required: true
@@ -54,12 +58,13 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     env:
       APP_DIR: blueprints/aws-ecs-fargate-github-oidc/app
-      INFRA_DIR: blueprints/aws-ecs-fargate-github-oidc/infrastructure/workload
+      INFRA_DIR: blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/${{ github.event.inputs.environment }}
       TF_IN_AUTOMATION: "true"
       TF_VAR_aws_region: ${{ github.event.inputs.aws_region }}
       TF_VAR_environment: ${{ github.event.inputs.environment }}
       TF_VAR_project_name: "ecs-fargate-oidc"
       TF_VAR_enable_nat_gateway: ${{ github.event.inputs.enable_nat_gateway }}
+      TF_VAR_enable_vpc_endpoints: ${{ github.event.inputs.enable_vpc_endpoints }}
     steps:
       #==============================================================================
       # DEPLOYMENT CONFIRMATION
@@ -94,6 +99,9 @@ jobs:
         with:
           terraform_version: "1.9.0"
 
+      #==============================================================================
+      # TERRAFORM INIT
+      #==============================================================================
       - name: Terraform Init
         working-directory: ${{ env.INFRA_DIR }}
         run: terraform init
