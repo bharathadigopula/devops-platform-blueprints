@@ -138,3 +138,9 @@ TF_BACKEND_KMS_KEY_ARN
 5. Run `AWS ECS Fargate OIDC Plan`.
 6. Review the plan.
 7. Run `AWS ECS Fargate OIDC Deploy` only when ready.
+
+Environment setup details:
+
+```text
+docs/github-environment-setup.md
+```
