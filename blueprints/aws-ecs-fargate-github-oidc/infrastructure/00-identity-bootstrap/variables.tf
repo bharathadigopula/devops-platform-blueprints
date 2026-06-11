@@ -42,6 +42,24 @@ variable "managed_policy_arns" {
   default     = []
 }
 
+variable "create_blueprint_permissions_policy" {
+  description = "Create and attach the scoped blueprint permissions policy to the GitHub Actions role"
+  type        = bool
+  default     = true
+}
+
+variable "enable_state_backend_permissions" {
+  description = "Include Terraform state backend permissions in the blueprint policy"
+  type        = bool
+  default     = true
+}
+
+variable "enable_workload_permissions" {
+  description = "Include ECS Fargate workload deployment permissions in the blueprint policy"
+  type        = bool
+  default     = true
+}
+
 #==============================================================================
 # GITHUB TRUST VARIABLES
 #==============================================================================

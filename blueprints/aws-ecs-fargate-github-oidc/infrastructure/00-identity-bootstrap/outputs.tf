@@ -12,6 +12,11 @@ output "github_actions_role_name" {
   value       = aws_iam_role.github_actions.name
 }
 
+output "blueprint_permissions_policy_arn" {
+  description = "Scoped blueprint permissions policy ARN attached to the GitHub Actions role"
+  value       = try(aws_iam_policy.blueprint_permissions[0].arn, null)
+}
+
 output "github_oidc_provider_arn" {
   description = "IAM OIDC provider ARN for GitHub Actions"
   value       = aws_iam_openid_connect_provider.github.arn
@@ -21,4 +26,3 @@ output "trusted_subject" {
   description = "GitHub OIDC subject allowed to assume the role"
   value       = local.trusted_subject
 }
-

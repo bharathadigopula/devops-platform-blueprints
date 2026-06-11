@@ -29,6 +29,22 @@ permissions:
 #==============================================================================
 
 jobs:
+  workflows:
+    name: Validate Workflows
+    runs-on: ubuntu-latest
+    steps:
+      #==============================================================================
+      # SOURCE CHECKOUT
+      #==============================================================================
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      #==============================================================================
+      # GITHUB ACTIONS VALIDATION
+      #==============================================================================
+      - name: Run Actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+
   app:
     name: Validate App
     runs-on: ubuntu-latest
@@ -37,13 +53,13 @@ jobs:
       # SOURCE CHECKOUT
       #==============================================================================
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       #==============================================================================
       # NODE SETUP
       #==============================================================================
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
 
@@ -57,9 +73,52 @@ jobs:
       #==============================================================================
       # CONTAINER BUILD VALIDATION
       #==============================================================================
+      - name: Lint Dockerfile
+        working-directory: blueprints/aws-ecs-fargate-github-oidc/app
+        run: docker run --rm -i hadolint/hadolint@sha256:30a8fd2e785ab6176eed53f74769e04f125afb2f74a6c52aef7d463583b6d45e < Dockerfile
+
       - name: Build Container
         working-directory: blueprints/aws-ecs-fargate-github-oidc/app
         run: docker build -t aws-ecs-fargate-github-oidc:test .
+
+      #==============================================================================
+      # CONTAINER SECURITY VALIDATION
+      #==============================================================================
+      - name: Scan Container Image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy@sha256:bcc376de8d77cfe086a917230e818dc9f8528e3c852f7b1aff648949b6258d1c \
+            image \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --no-progress \
+            --skip-version-check \
+            --severity HIGH,CRITICAL \
+            aws-ecs-fargate-github-oidc:test
+
+      #==============================================================================
+      # CONTAINER SBOM VALIDATION
+      #==============================================================================
+      - name: Generate Container SBOM
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/workspace" \
+            aquasec/trivy@sha256:bcc376de8d77cfe086a917230e818dc9f8528e3c852f7b1aff648949b6258d1c \
+            image \
+            --format cyclonedx \
+            --no-progress \
+            --output /workspace/container-sbom.cdx.json \
+            --skip-version-check \
+            aws-ecs-fargate-github-oidc:test
+
+      - name: Upload Container SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: aws-ecs-fargate-github-oidc-container-sbom
+          path: container-sbom.cdx.json
+          retention-days: 7
 
   terraform:
     name: Validate Terraform
@@ -78,13 +137,13 @@ jobs:
       # SOURCE CHECKOUT
       #==============================================================================
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       #==============================================================================
       # TERRAFORM SETUP
       #==============================================================================
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: "1.9.0"
 
@@ -126,13 +185,13 @@ jobs:
       # SOURCE CHECKOUT
       #==============================================================================
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       #==============================================================================
       # TFLINT SETUP
       #==============================================================================
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6
         with:
           tflint_version: v0.54.0
 
@@ -158,15 +217,16 @@ jobs:
       # SOURCE CHECKOUT
       #==============================================================================
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       #==============================================================================
       # CHECKOV VALIDATION
       #==============================================================================
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@a6a5c23963b9d127020ae43a959cd5d8eefc94c7
         with:
           directory: blueprints/aws-ecs-fargate-github-oidc/infrastructure
           framework: terraform
           config_file: .checkov.yaml
-          soft_fail: true
+          download_external_modules: true
+          soft_fail: false

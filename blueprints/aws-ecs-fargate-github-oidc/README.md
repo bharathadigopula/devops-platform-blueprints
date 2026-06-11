@@ -23,7 +23,10 @@ BLUEPRINT CAPABILITIES
 - Public ALB with private workload
 - ECS Fargate service deployment
 - ECR image publishing
+- Dockerfile linting and container vulnerability scanning
+- Container SBOM artifact generation
 - GitHub Actions OIDC trust
+- SHA-pinned GitHub Actions workflow dependencies
 - Terraform validation and planning
 - Manual apply with explicit confirmation
 - Deployment circuit breaker rollback
@@ -86,9 +89,65 @@ MANUAL DEPLOYMENT FLOW
 
 1. Run `terraform init` and `terraform apply` in `infrastructure/00-identity-bootstrap`.
 2. Add the output role ARN as the GitHub repository variable `AWS_ROLE_TO_ASSUME`.
-3. Attach account-specific permissions to the OIDC role through `managed_policy_arns` or your own IAM process.
+3. Review the generated `blueprint_permissions_policy_arn`.
 4. Run `AWS ECS Fargate OIDC State Backend`.
 5. Add `TF_BACKEND_BUCKET`, `TF_BACKEND_DYNAMODB_TABLE`, and `TF_BACKEND_KMS_KEY_ARN` from the backend outputs.
 6. Run the validation workflow.
 7. Run the plan workflow.
 8. Run the deploy workflow with the required confirmation phrase.
+
+## Permission Model
+
+<!--
+==============================================================================
+GITHUB ACTIONS PERMISSION MODEL
+==============================================================================
+-->
+
+The identity bootstrap layer creates a GitHub Actions role with a scoped blueprint policy by default.
+
+The policy includes permissions for:
+
+- Terraform state S3 bucket and DynamoDB lock table
+- KMS keys used by state and ECR encryption
+- VPC, subnets, route tables, security groups, and VPC endpoints
+- ECR repository creation and image push
+- ECS cluster, task definition, and service deployment
+- ALB, listener, and target group resources
+- ECS task IAM roles
+- CloudWatch log groups
+
+External managed policies are still supported through:
+
+```hcl
+managed_policy_arns = []
+```
+
+Set this only when your AWS account already has a standard permission model.
+
+## Teardown Flow
+
+<!--
+==============================================================================
+TEARDOWN FLOW
+==============================================================================
+-->
+
+Use `AWS ECS Fargate OIDC Destroy` to remove a deployed workload environment.
+
+The destroy workflow requires this confirmation phrase:
+
+```text
+destroy-aws-ecs-fargate-github-oidc
+```
+
+The workflow sets:
+
+```hcl
+force_delete_ecr           = true
+alb_deletion_protection    = false
+```
+
+This allows a demo environment to be cleaned up after testing.
+
+The Terraform state backend is intentionally separate and protected by Terraform `prevent_destroy`.

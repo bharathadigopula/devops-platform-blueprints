@@ -1,8 +1,8 @@
 #==============================================================================
-# AWS ECS FARGATE OIDC PLAN WORKFLOW
+# AWS ECS FARGATE OIDC DESTROY WORKFLOW
 #==============================================================================
 
-name: AWS ECS Fargate OIDC Plan
+name: AWS ECS Fargate OIDC Destroy
 
 #==============================================================================
 # WORKFLOW TRIGGERS
@@ -19,6 +19,9 @@ on:
         description: "AWS region"
         required: true
         default: "us-east-1"
+      confirm_destroy:
+        description: "Type destroy-aws-ecs-fargate-github-oidc"
+        required: true
 
 #==============================================================================
 # WORKFLOW PERMISSIONS
@@ -29,24 +32,44 @@ permissions:
   id-token: write
 
 #==============================================================================
+# WORKFLOW CONCURRENCY
+#==============================================================================
+
+concurrency:
+  group: aws-ecs-fargate-github-oidc-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+#==============================================================================
 # WORKFLOW JOBS
 #==============================================================================
 
 jobs:
-  plan:
-    name: Terraform Plan
+  destroy:
+    name: Destroy
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
       INFRA_DIR: blueprints/aws-ecs-fargate-github-oidc/infrastructure/environments/${{ github.event.inputs.environment }}
-      TF_IN_AUTOMATION: "true"
       TF_BACKEND_BUCKET: ${{ vars.TF_BACKEND_BUCKET }}
       TF_BACKEND_DYNAMODB_TABLE: ${{ vars.TF_BACKEND_DYNAMODB_TABLE }}
       TF_BACKEND_KMS_KEY_ARN: ${{ vars.TF_BACKEND_KMS_KEY_ARN }}
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_alb_deletion_protection: "false"
       TF_VAR_aws_region: ${{ github.event.inputs.aws_region }}
       TF_VAR_environment: ${{ github.event.inputs.environment }}
+      TF_VAR_force_delete_ecr: "true"
       TF_VAR_project_name: "ecs-fargate-oidc"
     steps:
+      #==============================================================================
+      # DESTROY CONFIRMATION
+      #==============================================================================
+      - name: Check Confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "destroy-aws-ecs-fargate-github-oidc" ]; then
+            echo "Confirmation phrase did not match."
+            exit 1
+          fi
+
       #==============================================================================
       # SOURCE CHECKOUT
       #==============================================================================
@@ -97,18 +120,8 @@ jobs:
             -backend-config="kms_key_id=${TF_BACKEND_KMS_KEY_ARN}"
 
       #==============================================================================
-      # TERRAFORM PLAN
+      # TERRAFORM DESTROY
       #==============================================================================
-      - name: Terraform Plan
+      - name: Terraform Destroy
         working-directory: ${{ env.INFRA_DIR }}
-        run: terraform plan -input=false -out=tfplan
-
-      #==============================================================================
-      # PLAN ARTIFACT
-      #==============================================================================
-      - name: Upload Plan
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: aws-ecs-fargate-github-oidc-${{ github.event.inputs.environment }}-tfplan
-          path: ${{ env.INFRA_DIR }}/tfplan
-          retention-days: 7
+        run: terraform destroy -input=false -auto-approve

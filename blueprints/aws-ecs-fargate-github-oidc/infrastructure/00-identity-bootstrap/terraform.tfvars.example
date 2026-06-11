@@ -8,4 +8,12 @@ environment       = "dev"
 github_owner      = "bharathadigopula"
 github_repository = "devops-platform-blueprints"
 github_branch     = "main"
-managed_policy_arns = []
+
+#==============================================================================
+# GITHUB ACTIONS ROLE PERMISSIONS
+#==============================================================================
+
+create_blueprint_permissions_policy = true
+enable_state_backend_permissions    = true
+enable_workload_permissions         = true
+managed_policy_arns                 = []

@@ -107,14 +107,15 @@ Run the setup in this order:
 
 1. Apply `blueprints/aws-ecs-fargate-github-oidc/infrastructure/00-identity-bootstrap`.
 2. Copy the `github_actions_role_arn` output.
-3. Create `AWS_ROLE_TO_ASSUME` in the `dev` environment.
-4. Run `AWS ECS Fargate OIDC State Backend` with `action=apply`.
-5. Copy the state backend outputs.
-6. Create backend variables in `dev`, `stage`, and `prod`.
-7. Create `AWS_ROLE_TO_ASSUME` in `stage` and `prod`.
-8. Run `AWS ECS Fargate OIDC Plan`.
-9. Review the plan.
-10. Run `AWS ECS Fargate OIDC Deploy`.
+3. Review the `blueprint_permissions_policy_arn` output.
+4. Create `AWS_ROLE_TO_ASSUME` in the `dev` environment.
+5. Run `AWS ECS Fargate OIDC State Backend` with `action=apply`.
+6. Copy the state backend outputs.
+7. Create backend variables in `dev`, `stage`, and `prod`.
+8. Create `AWS_ROLE_TO_ASSUME` in `stage` and `prod`.
+9. Run `AWS ECS Fargate OIDC Plan`.
+10. Review the plan.
+11. Run `AWS ECS Fargate OIDC Deploy`.
 
 ## Local Output Commands
 
@@ -129,6 +130,7 @@ After applying identity bootstrap locally:
 ```bash
 cd blueprints/aws-ecs-fargate-github-oidc/infrastructure/00-identity-bootstrap
 terraform output -raw github_actions_role_arn
+terraform output -raw blueprint_permissions_policy_arn
 ```
 
 After applying state backend locally:
@@ -188,3 +190,38 @@ TF_BACKEND_BUCKET
 TF_BACKEND_DYNAMODB_TABLE
 TF_BACKEND_KMS_KEY_ARN
 ```
+
+`AWS ECS Fargate OIDC Destroy` uses:
+
+```text
+AWS_ROLE_TO_ASSUME
+TF_BACKEND_BUCKET
+TF_BACKEND_DYNAMODB_TABLE
+TF_BACKEND_KMS_KEY_ARN
+```
+
+## Destroy Workflow
+
+<!--
+==============================================================================
+DESTROY WORKFLOW
+==============================================================================
+-->
+
+Use the destroy workflow after testing a live environment.
+
+Run:
+
+```text
+Actions -> AWS ECS Fargate OIDC Destroy -> Run workflow
+```
+
+Use this confirmation phrase:
+
+```text
+destroy-aws-ecs-fargate-github-oidc
+```
+
+The destroy workflow removes workload resources only.
+
+Keep the state backend until all environments have been removed and state has been reviewed.

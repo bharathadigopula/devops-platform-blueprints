@@ -116,6 +116,10 @@ AWS credentials are expected through OIDC, not long-lived access keys.
 
 Cost-bearing options are visible in Terraform variables.
 
+The bootstrap layer creates a scoped GitHub Actions role policy by default.
+
+That policy is intentionally limited to this blueprint's state backend, ECS Fargate workload, ECR, ALB, VPC, IAM task roles, KMS, and CloudWatch Logs actions.
+
 ## Deployment Order
 
 <!--
@@ -138,9 +142,33 @@ TF_BACKEND_KMS_KEY_ARN
 5. Run `AWS ECS Fargate OIDC Plan`.
 6. Review the plan.
 7. Run `AWS ECS Fargate OIDC Deploy` only when ready.
+8. Run `AWS ECS Fargate OIDC Destroy` when the environment is no longer needed.
 
 Environment setup details:
 
 ```text
 docs/github-environment-setup.md
 ```
+
+## Portfolio Readiness
+
+<!--
+==============================================================================
+PORTFOLIO READINESS
+==============================================================================
+-->
+
+This repository is ready to show as a public portfolio project without running real AWS infrastructure.
+
+It demonstrates:
+
+- Layered Terraform environment structure
+- GitHub Actions OIDC deployment pattern
+- Dockerfile linting and container vulnerability scanning
+- Container SBOM artifact generation
+- SHA-pinned GitHub Actions workflow dependencies
+- Manual plan, deploy, and destroy workflows
+- Cost-aware private ECS networking using VPC endpoints instead of NAT Gateway by default
+- Scoped deploy role permissions instead of long-lived AWS access keys
+
+Deploy later only from a sandbox AWS account after reviewing the Terraform plan and expected AWS costs.
